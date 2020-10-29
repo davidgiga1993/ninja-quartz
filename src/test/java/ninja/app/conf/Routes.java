@@ -21,14 +21,15 @@ import ninja.application.ApplicationRoutes;
 
 /**
  * @author Jens Fendler
- * 
  */
-public class Routes implements ApplicationRoutes {
+public class Routes implements ApplicationRoutes
+{
 
-    @Override
-    public void init(Router router) {
-        router.GET().route("/").with(Application.class, "index");
-        router.GET().route("/schedules").with(Application.class, "schedules");
-    }
+	@Override
+	public void init(Router router)
+	{
+		router.GET().route("/").with(Application.class, "index");
+		router.GET().route("/schedules").with(Application.class, "schedules");
+	}
 
 }

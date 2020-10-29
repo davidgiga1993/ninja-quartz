@@ -19,15 +19,16 @@ import org.quartz.PersistJobDataAfterExecution;
 
 /**
  * Quartz Job Wrapper for Concurrent and Stateful jobs.
- * 
- * @author Jens Fendler
  *
+ * @author Jens Fendler
  */
 @PersistJobDataAfterExecution
-public class ConcurrentStatefulNinjaQuartzJob extends ConcurrentNinjaQuartzJob {
+public class ConcurrentStatefulNinjaQuartzJob extends ConcurrentNinjaQuartzJob
+{
 
-    public ConcurrentStatefulNinjaQuartzJob() {
-        super();
-    }
+	public ConcurrentStatefulNinjaQuartzJob()
+	{
+		super();
+	}
 
 }

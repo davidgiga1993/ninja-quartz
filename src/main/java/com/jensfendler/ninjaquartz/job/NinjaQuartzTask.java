@@ -15,46 +15,42 @@
  */
 package com.jensfendler.ninjaquartz.job;
 
-import java.lang.reflect.InvocationTargetException;
+import com.jensfendler.ninjaquartz.annotations.QuartzSchedule;
 
 import org.quartz.JobExecutionContext;
 
-import com.jensfendler.ninjaquartz.annotations.QuartzSchedule;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * A {@link NinjaQuartzTask} wraps the invocation of a scheduled method (i.e. a
  * method annotated with {@link QuartzSchedule}).
- * 
- * @author Jens Fendler
  *
+ * @author Jens Fendler
  */
-public interface NinjaQuartzTask {
+public interface NinjaQuartzTask
+{
 
-    /**
-     * Execute a scheduled method.
-     * 
-     * @param context
-     *            the Quartz job's execution context (passed to the scheduled
-     *            method if it provides a single {@link JobExecutionContext}
-     *            parameter)
-     * @throws IllegalAccessException
-     *             if the scheduled method cannot be called due to access
-     *             restrictions
-     * @throws IllegalArgumentException
-     *             if the scheduled method cannot be called due to invalid
-     *             arguments (i.e. anything other than either no arguments, or a
-     *             single {@link JobExecutionContext} argument)
-     * @throws InvocationTargetException
-     *             if the scheduled method could not be invoked.
-     */
-    public void execute(JobExecutionContext context)
-            throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
+	/**
+	 * Execute a scheduled method.
+	 *
+	 * @param context the Quartz job's execution context (passed to the scheduled
+	 *                method if it provides a single {@link JobExecutionContext}
+	 *                parameter)
+	 * @throws IllegalAccessException    if the scheduled method cannot be called due to access
+	 *                                   restrictions
+	 * @throws IllegalArgumentException  if the scheduled method cannot be called due to invalid
+	 *                                   arguments (i.e. anything other than either no arguments, or a
+	 *                                   single {@link JobExecutionContext} argument)
+	 * @throws InvocationTargetException if the scheduled method could not be invoked.
+	 */
+	void execute(JobExecutionContext context)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
 
-    /**
-     * Get the name of the task.
-     * 
-     * @return the name of the wrapped task
-     */
-    public String getTaskName();
+	/**
+	 * Get the name of the task.
+	 *
+	 * @return the name of the wrapped task
+	 */
+	String getTaskName();
 
 }

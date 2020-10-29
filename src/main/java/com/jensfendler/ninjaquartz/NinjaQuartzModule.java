@@ -15,44 +15,48 @@
  */
 package com.jensfendler.ninjaquartz;
 
-import org.quartz.SchedulerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.jensfendler.ninjaquartz.provider.QuartzSchedulerFactoryProvider;
 
+import org.quartz.SchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ninja.lifecycle.Start;
+
 /**
  * @author Jens Fendler
- *
  */
-public class NinjaQuartzModule extends AbstractModule {
+public class NinjaQuartzModule extends AbstractModule
+{
 
-    private static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
+	private static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
 
-    /**
-     * @see com.google.inject.AbstractModule#configure()
-     */
-    @Override
-    protected void configure() {
-        logger.info("NinjaQuartz Module initialising.");
+	/**
+	 * @see com.google.inject.AbstractModule#configure()
+	 */
+	@Override
+	protected void configure()
+	{
+		logger.info("NinjaQuartz Module initialising.");
 
-        // disable Quartz' checking for updates
-        System.setProperty("org.terracotta.quartz.skipUpdateCheck", "true");
+		// disable Quartz' checking for updates
+		System.setProperty("org.terracotta.quartz.skipUpdateCheck", "true");
 
-        bind(SchedulerFactory.class).toProvider(QuartzSchedulerFactoryProvider.class).in(Singleton.class);
+		bind(SchedulerFactory.class).toProvider(QuartzSchedulerFactoryProvider.class).in(Singleton.class);
 
-        NinjaQuartzScheduleHelper scheduleHelper = new NinjaQuartzScheduleHelper();
-        requestInjection(scheduleHelper);
+		NinjaQuartzSchedulerRegistration schedulerRegistration = new NinjaQuartzSchedulerRegistration();
+		requestInjection(schedulerRegistration);
 
-        bindListener(Matchers.any(), new NinjaQuartzTypeListener(scheduleHelper));
-        bind(NinjaQuartzScheduleHelper.class).toInstance(scheduleHelper);
+		bindListener(Matchers.any(), new NinjaQuartzTypeListener(schedulerRegistration));
+		bind(NinjaQuartzSchedulerRegistration.class).toInstance(schedulerRegistration);
 
-        bind(NinjaQuartzUtil.class).to(NinjaQuartzUtilImpl.class);
+		bind(NinjaQuartzUtil.class).to(NinjaQuartzUtilImpl.class);
+		bind(NinjaQuartzStartup.class);
 
-        logger.info("NinjaQuartz Module initialisation completed.");
-    }
+		logger.info("NinjaQuartz Module initialisation completed.");
+	}
 
 }

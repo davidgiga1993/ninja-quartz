@@ -15,43 +15,44 @@
  */
 package com.jensfendler.ninjaquartz.job;
 
+import org.quartz.JobExecutionContext;
+
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 
-import org.quartz.JobExecutionContext;
-
 /**
  * @author Jens Fendler
- *
  */
-public abstract class AbstractNinjaQuartzTaskImpl implements NinjaQuartzTask, Serializable {
+public abstract class AbstractNinjaQuartzTaskImpl implements NinjaQuartzTask, Serializable
+{
 
-    /**
-     * The name of the task
-     */
-    protected String taskName;
+	/**
+	 * The name of the task
+	 */
+	protected String taskName;
 
-    /**
-     * Create a new {@link AbstractNinjaQuartzTaskImpl} object.
-     * 
-     * @param taskName
-     *            the name of the task.
-     */
-    public AbstractNinjaQuartzTaskImpl(String taskName) {
-        this.taskName = taskName;
-    }
+	/**
+	 * Create a new {@link AbstractNinjaQuartzTaskImpl} object.
+	 *
+	 * @param taskName the name of the task.
+	 */
+	public AbstractNinjaQuartzTaskImpl(String taskName)
+	{
+		this.taskName = taskName;
+	}
 
-    /**
-     * @see com.jensfendler.ninjaquartz.job.NinjaQuartzTask#execute(org.quartz.JobExecutionContext)
-     */
-    public abstract void execute(JobExecutionContext context)
-            throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
+	/**
+	 * @see com.jensfendler.ninjaquartz.job.NinjaQuartzTask#execute(org.quartz.JobExecutionContext)
+	 */
+	public abstract void execute(JobExecutionContext context)
+			throws IllegalAccessException, IllegalArgumentException, InvocationTargetException;
 
-    /**
-     * @see com.jensfendler.ninjaquartz.job.NinjaQuartzTask#getTaskName()
-     */
-    public String getTaskName() {
-        return taskName;
-    }
+	/**
+	 * @see com.jensfendler.ninjaquartz.job.NinjaQuartzTask#getTaskName()
+	 */
+	public String getTaskName()
+	{
+		return taskName;
+	}
 
 }

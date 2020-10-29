@@ -15,71 +15,77 @@
  */
 package com.jensfendler.ninjaquartz.provider;
 
-import org.quartz.SchedulerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.jensfendler.ninjaquartz.NinjaQuartzModule;
 
+import org.quartz.SchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.InvocationTargetException;
+
 import ninja.utils.NinjaProperties;
 
 /**
  * @author Jens Fendler
- *
  */
 @Singleton
-public class QuartzSchedulerFactoryProvider implements Provider<SchedulerFactory> {
+public class QuartzSchedulerFactoryProvider implements Provider<SchedulerFactory>
+{
+	protected static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
 
-    protected static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
+	private final NinjaProperties ninjaProperties;
 
-    /**
-     * {@link NinjaProperties} as injected in constructor
-     */
-    private NinjaProperties ninjaProperties;
+	private static SchedulerFactory schedulerFactory;
 
-    private static SchedulerFactory schedulerFactory;
+	@Inject
+	public QuartzSchedulerFactoryProvider(NinjaProperties ninjaProperties)
+	{
+		logger.info("Initialising {}.", getClass().getName());
+		this.ninjaProperties = ninjaProperties;
+	}
 
-    @Inject
-    public QuartzSchedulerFactoryProvider(NinjaProperties ninjaProperties) {
-        logger.info("Initialising {}.", getClass().getName());
-        this.ninjaProperties = ninjaProperties;
-    }
+	/**
+	 * @see com.google.inject.Provider#get()
+	 */
+	public SchedulerFactory get()
+	{
+		logger.debug("{} called to get SchedulerFactory.", getClass().getName());
+		if (schedulerFactory == null)
+		{
+			loadSchedulerFactory();
+		}
+		return schedulerFactory;
+	}
 
-    /**
-     * @see com.google.inject.Provider#get()
-     */
-    public SchedulerFactory get() {
-        logger.debug("{} called to get SchedulerFactory.", getClass().getName());
-        if (schedulerFactory == null) {
-            loadSchedulerFactory();
-        }
-        return schedulerFactory;
-    }
+	/**
+	 * Instantiate the configured {@link SchedulerFactory} class.
+	 */
+	private void loadSchedulerFactory()
+	{
+		String sfClassName = ninjaProperties.getWithDefault("quartz.schedulerFactory",
+				"org.quartz.impl.StdSchedulerFactory");
+		logger.info("Using Quartz SchedulerFactory from {}.", sfClassName);
 
-    /**
-     * Instantiate the configured {@link SchedulerFactory} class.
-     */
-    private void loadSchedulerFactory() {
-        String sfClassName = ninjaProperties.getWithDefault("quartz.schedulerFactory",
-                "org.quartz.impl.StdSchedulerFactory");
-        logger.info("Using Quartz SchedulerFactory from {}.", sfClassName);
-
-        try {
-            Class<?> sfClass = Class.forName(sfClassName);
-            schedulerFactory = (SchedulerFactory) sfClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Quartz SchedulerFactory class '" + sfClassName + "' not found.", e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException("Cannot instantiate Quartz SchedulerFactory class '" + sfClassName + "'.", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(
-                    "Illegal access exception while trying to instantiate Quartz SchedulerFactory class '" + sfClassName
-                            + "'.",
-                    e);
-        }
-    }
+		try
+		{
+			Class<?> sfClass = Class.forName(sfClassName);
+			schedulerFactory = (SchedulerFactory) sfClass.getConstructor().newInstance();
+		}
+		catch (ClassNotFoundException e)
+		{
+			throw new RuntimeException("Quartz SchedulerFactory class '" + sfClassName + "' not found.", e);
+		}
+		catch (InstantiationException | NoSuchMethodException | InvocationTargetException e)
+		{
+			throw new RuntimeException("Cannot instantiate Quartz SchedulerFactory class '" + sfClassName + "'.", e);
+		}
+		catch (IllegalAccessException e)
+		{
+			throw new RuntimeException("Illegal access exception while trying to instantiate Quartz SchedulerFactory class '" + sfClassName + "'.", e);
+		}
+	}
 
 }

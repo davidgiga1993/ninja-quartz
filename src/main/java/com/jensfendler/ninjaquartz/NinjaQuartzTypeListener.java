@@ -15,75 +15,82 @@
  */
 package com.jensfendler.ninjaquartz;
 
-import java.lang.reflect.Method;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.TypeLiteral;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.jensfendler.ninjaquartz.annotations.QuartzSchedule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+
 /**
  * @author Jens Fendler
- *
  */
-public class NinjaQuartzTypeListener implements TypeListener {
+public class NinjaQuartzTypeListener implements TypeListener
+{
 
-    static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
+	static final Logger logger = LoggerFactory.getLogger(NinjaQuartzModule.class);
 
-    /**
-     * The {@link NinjaQuartzScheduleHelper} as passed to the constructor.
-     */
-    NinjaQuartzScheduleHelper scheduleHelper;
+	/**
+	 * The {@link NinjaQuartzSchedulerRegistration} as passed to the constructor.
+	 */
+	NinjaQuartzSchedulerRegistration scheduleHelper;
 
-    public NinjaQuartzTypeListener(NinjaQuartzScheduleHelper scheduleHelper) {
-        this.scheduleHelper = scheduleHelper;
-    }
+	public NinjaQuartzTypeListener(NinjaQuartzSchedulerRegistration scheduleHelper)
+	{
+		this.scheduleHelper = scheduleHelper;
+	}
 
-    /**
-     * @see com.google.inject.spi.TypeListener#hear(com.google.inject.TypeLiteral,
-     *      com.google.inject.spi.TypeEncounter)
-     */
-    public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
-        Class<?> clazz = type.getRawType();
-        for (Method method : clazz.getMethods()) {
-            QuartzSchedule quartzSchedule = method.getAnnotation(QuartzSchedule.class);
-            if (quartzSchedule != null) {
-                logger.debug("Scheduling methods in class {}.", type.getRawType().getName());
-                encounter.register(new QuartzScheduleInjectionListener<I>(scheduleHelper));
-            }
-        }
-    }
+	/**
+	 * @see com.google.inject.spi.TypeListener#hear(com.google.inject.TypeLiteral,
+	 * com.google.inject.spi.TypeEncounter)
+	 */
+	public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter)
+	{
+		Class<?> clazz = type.getRawType();
+		for (Method method : clazz.getMethods())
+		{
+			QuartzSchedule quartzSchedule = method.getAnnotation(QuartzSchedule.class);
+			if (quartzSchedule == null)
+			{
+				continue;
+			}
 
-    /**
-     * Listener to receive injection events on a per-instance basis. This will
-     * be used to do the scheduling (which requires a "target" instance to
-     * invoke the scheduled methods on.)
-     * 
-     * @author Jens Fendler
-     *
-     * @param <I>
-     */
-    private static class QuartzScheduleInjectionListener<I> implements InjectionListener<I> {
+			logger.debug("Scheduling methods in class {}.", type.getRawType().getName());
+			encounter.register(new QuartzScheduleInjectionListener<>(scheduleHelper));
+		}
+	}
 
-        private final NinjaQuartzScheduleHelper scheduleHelper;
+	/**
+	 * Listener to receive injection events on a per-instance basis. This will
+	 * be used to do the scheduling (which requires a "target" instance to
+	 * invoke the scheduled methods on.)
+	 *
+	 * @param <I>
+	 * @author Jens Fendler
+	 */
+	private static class QuartzScheduleInjectionListener<I> implements InjectionListener<I>
+	{
 
-        /**
-         * @param scheduleHelper
-         */
-        private QuartzScheduleInjectionListener(NinjaQuartzScheduleHelper scheduleHelper) {
-            this.scheduleHelper = scheduleHelper;
-        }
+		private final NinjaQuartzSchedulerRegistration scheduleHelper;
 
-        /**
-         * @see com.google.inject.spi.InjectionListener#afterInjection(java.lang.Object)
-         */
-        public void afterInjection(final I injectee) {
-            scheduleHelper.scheduleTarget(injectee);
-        }
-    }
+		private QuartzScheduleInjectionListener(NinjaQuartzSchedulerRegistration scheduleHelper)
+		{
+			this.scheduleHelper = scheduleHelper;
+		}
 
+		/**
+		 * Invoked by Guice after it injects the fields and methods of instance.
+		 *
+		 * @param injectee The object which has the scheduler annotation
+		 * @see com.google.inject.spi.InjectionListener#afterInjection(java.lang.Object)
+		 */
+		public void afterInjection(final I injectee)
+		{
+			scheduleHelper.scheduleTarget(injectee);
+		}
+	}
 }

@@ -19,14 +19,15 @@ import org.quartz.DisallowConcurrentExecution;
 
 /**
  * Quartz Job Wrapper for Non-Concurrent and Stateful jobs.
- * 
- * @author Jens Fendler
  *
+ * @author Jens Fendler
  */
 @DisallowConcurrentExecution
-public class NonConcurrentNinjaQuartzJob extends AbstractNinjaQuartzJob {
+public class NonConcurrentNinjaQuartzJob extends AbstractNinjaQuartzJob
+{
 
-    public NonConcurrentNinjaQuartzJob() {
-        super();
-    }
+	public NonConcurrentNinjaQuartzJob()
+	{
+		super();
+	}
 }

@@ -15,7 +15,18 @@
  */
 package com.jensfendler.ninjaquartz.test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import ninja.app.controllers.Application;
+import ninja.app.modules.TestSchedules;
+import ninja.app.modules.TimedCounter;
 import ninja.standalone.Standalone;
 import ninja.standalone.StandaloneHelper;
 import ninja.utils.NinjaMode;
@@ -24,102 +35,132 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 
-import static org.junit.Assert.*;
 
-import java.io.IOException;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static ninja.app.modules.TestSchedules.NINJA_START;
+import static ninja.app.modules.TestSchedules.SCHEDULE_TESTS;
+import static ninja.app.modules.TestSchedules.SCHEDULE_TEST_1;
+import static ninja.app.modules.TestSchedules.SCHEDULE_TEST_5;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Basic integration tests for Ninja Quartz module.
- * 
- * @author Jens Fendler
- *
+ * This test runs a ninja server which has some defined schedulers.
+ * After a certain amount of time the scheduler calls are inspected to
+ * verify if the scheduler did the expected things
  */
-public class NinjaQuartzIntegrationTest {
+public class NinjaQuartzIntegrationTest
+{
+	private static Standalone<?> standalone;
+	private static OkHttpClient client;
+	private static okhttp3.Request.Builder requestBuilder;
 
-    private static Standalone<?> standalone;
+	private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static OkHttpClient client;
+	@SuppressWarnings("rawtypes")
+	@BeforeAll
+	static public void beforeClass() throws Exception
+	{
+		// start ninja application
+		Application.LOG.info("Starting Ninja server...");
+		int randomPort = StandaloneHelper.findAvailablePort(8090, 9000);
+		Class<? extends Standalone> standaloneClass = StandaloneHelper.resolveStandaloneClass();
+		standalone = StandaloneHelper.create(standaloneClass).port(randomPort);
+		standalone.ninjaMode(NinjaMode.test).configure().start();
 
-    private static okhttp3.Request.Builder requestBuilder;
+		// prepare http client
+		Application.LOG.info("Initializing OKHttpClient...");
+		requestBuilder = new Request.Builder();
+		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.NONE);
+		client = new OkHttpClient.Builder().followRedirects(true).addInterceptor(loggingInterceptor).build();
 
-    @SuppressWarnings("rawtypes")
-    @BeforeClass
-    static public void beforeClass() throws Exception {
-        // start ninja application
-        Application.LOG.info("Starting Ninja server...");
-        int randomPort = StandaloneHelper.findAvailablePort(8090, 9000);
-        Class<? extends Standalone> standaloneClass = StandaloneHelper.resolveStandaloneClass();
-        standalone = StandaloneHelper.create(standaloneClass).ninjaMode(NinjaMode.test).port(randomPort).configure()
-                .start();
+	}
 
-        // prepare http client
-        Application.LOG.info("Initializing OKHttpClient...");
-        requestBuilder = new Request.Builder();
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.NONE);
-        client = new OkHttpClient.Builder().followRedirects(true).addInterceptor(loggingInterceptor).build();
+	@AfterAll
+	static public void afterClass()
+	{
+		// clean application shutdown
+		standalone.shutdown();
+	}
 
-    }
+	@Test
+	public void application() throws Exception
+	{
+		Response response = requestGet("/");
+		assertTrue(response.isSuccessful(), "Index page failed with code " + response.code());
+	}
 
-    @AfterClass
-    static public void afterClass() {
-        // clean application shutdown
-        standalone.shutdown();
-    }
+	@Test
+	public void schedulers() throws Exception
+	{
+		Application.LOG.info("Pausing 15s for Quartz to run scheduled methods...");
+		// give the scheduler some time to run the test methods
+		Thread.sleep(15000);
+		Application.LOG.info("Done pausing.");
 
-    @Test
-    public void testApplication() throws Exception {
-        Response response = requestGet("/");
-        assertTrue("Index page failed with code " + response.code(), response.isSuccessful());
-    }
+		Response response = requestGet("/schedules");
+		assertTrue(response.isSuccessful(), "Schedules page failed with code " + response.code());
 
-    @Test
-    public void testSchedule1() throws Exception {
-        Application.LOG.info("Pausing 15s for Quartz to run scheduled methods...");
-        // give the scheduler some time to run the test methods
-        Thread.sleep(15000);
-        Application.LOG.info("Done pausing.");
+		String jsonStr = response.body().string();
+		Application.TicksDto replyDto = mapper.readValue(jsonStr, Application.TicksDto.class);
 
-        Response response = requestGet("/schedules");
-        assertTrue("Schedules page failed with code " + response.code(), response.isSuccessful());
+		// Make sure the first scheduler did not run before ninja has been fully started
+		long ninjaStartup = replyDto.ticks.get(NINJA_START).timestamps.get(0);
+		long firstSchedule = replyDto.ticks.get(SCHEDULE_TEST_1).timestamps.get(0);
+		assertTrue(ninjaStartup < firstSchedule, "Scheduler before ninja startup");
 
-        String[] values = response.body().string().split(",");
-        assertTrue("Expected (5) values not received", (values != null) && (values.length == 5));
+		for (String name : SCHEDULE_TESTS)
+		{
+			TimedCounter.Ticks ticks = replyDto.ticks.get(name);
+			// Each scheduler should have executed least twice
+			assertNotNull(ticks, name + " did not run");
+			assertTrue(ticks.timestamps.size() > 1, name + " did not run twice");
+		}
 
-        for (int i = 0; i < values.length; i++) {
-            try {
-                Integer value = Integer.parseInt(values[i]);
-                assertTrue("Schedule method number " + (i + 1) + " seems to not have run (non-positive counter value)",
-                        (value > 0));
-            } catch (NumberFormatException nfe) {
-                assertTrue("Counter value is not an integer: " + values[i], false);
-            }
-        }
-    }
+		for (String name : SCHEDULE_TESTS)
+		{
+			TimedCounter.Ticks ticks = replyDto.ticks.get(name);
+			assertDelta(name, ticks, 2);
+		}
 
-    /**
-     * HTTP Client Helper method to issue a GET request
-     * 
-     * @param appPath
-     * @return
-     * @throws IOException
-     */
-    protected Response requestGet(String appPath) throws IOException {
-        Request request = buildGetRequest(appPath);
-        return client.newCall(request).execute();
-    }
+		// The last scheduler has a startup delay of 5 seconds
+		// Since the first scheduler has a delay of 1
+		TimedCounter.Ticks scheduler1 = replyDto.ticks.get(TestSchedules.SCHEDULE_TEST_1);
+		long delta = replyDto.ticks.get(SCHEDULE_TEST_5).timestamps.get(0) - scheduler1.timestamps.get(0);
+		// So there should be roughly a 4 sec delay
+		assertEquals(4, TimeUnit.NANOSECONDS.toSeconds(delta), 1, "Startup delay not working");
+	}
 
-    /**
-     * HTTP Client helper method to build a GET request.
-     * 
-     * @param appPath
-     * @return
-     */
-    protected Request buildGetRequest(String appPath) {
-        return requestBuilder.get().url(standalone.getBaseUrls().get(0) + appPath).build();
-    }
+	/**
+	 * Checks if the given ticks are roughly the given number of seconds apart
+	 *
+	 * @param ticks   Ticks
+	 * @param seconds Seconds
+	 */
+	private void assertDelta(String schedulerName, TimedCounter.Ticks ticks, int seconds)
+	{
+		long previous = ticks.timestamps.get(0);
+		for (int X = 1; X < ticks.timestamps.size(); X++)
+		{
+			long timestamp = ticks.timestamps.get(X);
+			long millisDelta = TimeUnit.NANOSECONDS.toMillis(timestamp - previous);
+			// Allow 1sec drift
+			assertEquals(0, Math.abs(TimeUnit.SECONDS.toMillis(seconds) - millisDelta), 1000,
+					"Time delta too long for " + schedulerName + ", tick " + X);
+			previous = timestamp;
+		}
+	}
+
+
+	protected Response requestGet(String appPath) throws IOException
+	{
+		Request request = buildGetRequest(appPath);
+		return client.newCall(request).execute();
+	}
+
+	protected Request buildGetRequest(String appPath)
+	{
+		return requestBuilder.get().url(standalone.getBaseUrls().get(0) + appPath).build();
+	}
 }

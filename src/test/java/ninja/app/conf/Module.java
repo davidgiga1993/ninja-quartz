@@ -21,24 +21,35 @@ import com.jensfendler.ninjaquartz.NinjaQuartzModule;
 import ninja.app.controllers.Application;
 import ninja.app.modules.TestSchedules;
 import ninja.conf.FrameworkModule;
+import ninja.conf.NinjaClassicModule;
+import ninja.utils.NinjaProperties;
 
 /**
  * @author Jens Fendler
- *
  */
 @Singleton
-public class Module extends FrameworkModule {
+public class Module extends FrameworkModule
+{
+	private final NinjaProperties ninjaProperties;
 
-    /**
-     * @see com.google.inject.AbstractModule#configure()
-     */
-    @Override
-    public void configure() {
-        install(new NinjaQuartzModule());
-        Application.LOG.info("NinjaQuartzModule() has been installed.");
+	public Module(NinjaProperties ninjaProperties)
+	{
+		this.ninjaProperties = ninjaProperties;
+	}
 
-        bind(TestSchedules.class);
-        Application.LOG.info("Scheduled methods in TestSchedules.class have been set up.");
-    }
+
+	@Override
+	public void configure()
+	{
+		install(new NinjaClassicModule(ninjaProperties)
+				.scheduler(false)
+		);
+
+		install(new NinjaQuartzModule());
+		Application.LOG.info("NinjaQuartzModule() has been installed.");
+
+		bind(TestSchedules.class);
+		Application.LOG.info("Scheduled methods in TestSchedules.class have been set up.");
+	}
 
 }

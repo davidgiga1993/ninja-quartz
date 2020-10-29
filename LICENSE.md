@@ -1,4 +1,3 @@
-Copyright 2016 Fendler Consulting cc. www.jensfendler.com
 Licensed under the Apache License Version 2.0 as per below.
 
 
