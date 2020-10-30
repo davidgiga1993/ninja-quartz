@@ -11,9 +11,9 @@ Basic Usage:
 ```xml
 
     <dependency>
-        <groupId>com.jensfendler</groupId>
+        <groupId>org.dev-core</groupId>
         <artifactId>ninja-quartz</artifactId>
-        <version>0.0.7</version>
+        <version>1.0.0</version>
     </dependency>
 
 ```
@@ -141,5 +141,4 @@ To overcome this issue until the root cause is resolved, you should split your s
 
 ## License
 
-Copyright (C) 2016 Fendler Consulting cc.
 This work is licensed under the Apache License, Version 2.0. See LICENSE for details.
