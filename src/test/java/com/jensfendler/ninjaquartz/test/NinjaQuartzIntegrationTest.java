@@ -94,9 +94,9 @@ public class NinjaQuartzIntegrationTest
 	@Test
 	public void schedulers() throws Exception
 	{
-		Application.LOG.info("Pausing 15s for Quartz to run scheduled methods...");
+		Application.LOG.info("Pausing for Quartz to run scheduled methods...");
 		// give the scheduler some time to run the test methods
-		Thread.sleep(15000);
+		Thread.sleep(8000);
 		Application.LOG.info("Done pausing.");
 
 		Response response = requestGet("/schedules");
