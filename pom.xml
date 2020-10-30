@@ -36,6 +36,16 @@
 		<url>https://github.com/davidgiga1993/ninja-quartz</url>
 	</issueManagement>
 
+	<developers>
+		<developer>
+			<id>davidgiga1993</id>
+			<name>David Schumann</name>
+			<email>david@dev-core.org</email>
+			<organization>Dev-Core</organization>
+			<organizationUrl>https://dev-core.org</organizationUrl>
+		</developer>
+	</developers>
+
 
 	<profiles>
 		<profile>
