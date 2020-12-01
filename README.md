@@ -2,6 +2,8 @@ Quartz Scheduler integration for the Ninja Web Framework.
 =========================================================
 This project provides a module to integrate the [Quartz Scheduler](https://quartz-scheduler.org/) with the [Ninja Framework](https://github.com/ninjaframework/ninja).
 
+This fork has been created since the original project is not maintaned anymore
+
 
 Basic Usage:
 ------------
